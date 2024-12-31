@@ -1,7 +1,19 @@
 ---
 title: "Assignment Multiple Linear Regression"
 author: "Group 1"
-format: html
+format:
+  html:
+    toc: true
+    toc-title: Contents
+    toc-location: left
+    toc-depth: 3
+    toc-expand: 1
+    number-sections: true
+    code-fold: true
+    code-summary: "Show the Code"
+    theme:
+      light: united
+      dark: cyborg
 editor: visual
 execute:
       warning: false
@@ -119,7 +131,7 @@ levels(insurance$sex)
 levels(insurance$smoker)
 ```
 
-### Exploratory data analysis (EDA)
+### **Exploratory data analysis (EDA)**
 
 **Visualise relationships:**
 
@@ -629,3 +641,9 @@ extract_eq(final_model, use_coefs = TRUE)
 -   Every one-unit increase in BMI, health insurance charges are expected to rise by USD 325, assuming all other factors remain constant. The confidence interval is relatively tight, and the relationship is statistically significant.
 
 -   No significant difference in charges between males and females.
+
+------------------------------------------------------------------------
+
+## **Github Repo**
+
+Feel free to visit our repo: <https://github.com/ruhaifimd/Multiple-Linear-Regression_DrPH.git>
