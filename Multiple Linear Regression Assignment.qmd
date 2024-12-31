@@ -1,0 +1,631 @@
+---
+title: "Assignment Multiple Linear Regression"
+author: "Group 1"
+format: html
+editor: visual
+execute:
+      warning: false
+---
+
+## **Group members:**
+
+1\) Muhammad Ruhaifi bin Muhammad Sabri (22305762)
+
+2\) Dzul Hairy bin Mohd Ramlan (22305758)
+
+3\) Nur Shuhaiza binti Supian (22306056)
+
+4\) Aziemah binti Nafsun (22305774)
+
+5\) Noor Nazli bt Din (22306061)
+
+------------------------------------------------------------------------
+
+## **Workflow**
+
+-   Introduction
+
+-   Research question
+
+-   Methodology
+
+-   Data Exploration
+
+-   Perform Linear Regression Model
+
+-   Model Selection
+
+-   Model Diagnostic and Assumption Checking
+
+-   Final Model Checking
+
+-   Final Table Presentation
+
+-   Interpretation
+
+------------------------------------------------------------------------
+
+## **Introduction**
+
+This was data from **US Health Insurance Dataset** comprise medical information and costs billed by health insurance companies. it contains six variables with 1338 observations:
+
+1.  age: age of patient (continuous)
+2.  sex: gender of the subjects (categorical : male, female)
+3.  bmi: BMI of subject (continuous)
+4.  children: Number of children covered by health insurance (continuous)
+5.  smoker: smoking status of subject (categorical: no, yes)
+6.  charges: individual medical costs billed by health insurance (continuous)
+
+------------------------------------------------------------------------
+
+## **Research question**
+
+How are age, BMI, number of children, sex, and smoking status associated with health insurance costs (charges) in USD?
+
+------------------------------------------------------------------------
+
+## **Methodology**
+
+We will use multiple linear regression model approach to analyse predictors to explain variation of health insurance cost in sample population. 1st model will consist of all independent variables (age, sex, BMI, children, and smoking status) and another model will be constructed by adding interaction term between age and smoking status as effect of age towards health insurance cost can be modified by individual’s smoking status. Model comparison will be executed using anova test to select the final model. Model assessment will be conducted by running the diagnostic plot and checking the model for any influential observation before final model is concluded.
+
+------------------------------------------------------------------------
+
+## **Data Exploration**
+
+```{r}
+#loading necessary packages
+library(tidyverse)
+library(haven)
+library(gtsummary)
+library(corrplot)
+library(knitr)
+library(tidyr)
+library(ggplot2)
+library(broom)
+library(sjPlot)
+```
+
+### **Load and inspect the data**
+
+```{r}
+# Load the dataset
+library(readr)
+insurance <- read_csv("insurance.csv")
+
+# Inspect the data
+str(insurance)
+summary(insurance)
+head(insurance)
+
+# Check for missing values
+sum(is.na(insurance))
+```
+
+------------------------------------------------------------------------
+
+### **Data preparation**
+
+Convert categorical variables (`sex` and `smoker`) to factors:
+
+```{r}
+insurance$sex <- as.factor(insurance$sex)
+insurance$smoker <- as.factor(insurance$smoker)
+```
+
+Check if levels are correct:
+
+```{r}
+levels(insurance$sex)
+levels(insurance$smoker)
+```
+
+### Exploratory data analysis (EDA)
+
+**Visualise relationships:**
+
+```{r}
+pairs(insurance[, c("age", "bmi", "children", "charges")])
+```
+
+**Correlation between continuous variables:**
+
+```{r}
+cor_matrix <- cor(insurance[, c("age", "bmi", "children", "charges")])
+
+#visualize the correlation matrix
+corrplot(cor_matrix, method = "circle")
+```
+
+no obvious correlation issue between continuous variables
+
+**Boxplots for categorical variables:**
+
+1.  **smoking status**
+
+```{r}
+ggplot(insurance, aes(x = smoker, y = charges, fill = smoker)) +
+  geom_boxplot() +
+  labs(title = "Health Insurance Cost by Smoking Status", y = "Charges (USD)")
+```
+
+2.  **gender**
+
+    ```{r}
+    ggplot(insurance, aes(x = sex, y = charges, fill = sex)) +
+      geom_boxplot() +
+      labs(title = "Health Insurance Cost by Gender", y = "Charges (USD)")
+    ```
+
+### **Data Summary**
+
+**Table Summary**
+
+```{r}
+insurance %>% 
+  tbl_summary( label = list(age  ~ "Age", sex  ~ "Gender", bmi ~ "BMI" , children ~ "Number of Children", smoker ~ "Smoking Status",  charges ~ "Health Insurance Cost (USD)") , 
+ statistic = list(all_continuous() ~ "{mean} ({sd})")) %>% bold_labels() %>% 
+italicize_levels()
+```
+
+------------------------------------------------------------------------
+
+### **Data Visualization**
+
+For **continuous data**: We employ histograms to gain insight into the distribution of each feature. This allows us to understand the central tendency, spread, and shape of the dataset’s distribution.
+
+1.  **Age**
+
+    ```{r}
+    ggplot(insurance, aes (age))+
+      geom_histogram()
+    ```
+
+2.  **BMI**
+
+    ```{r}
+    ggplot(insurance, aes (bmi))+
+      geom_histogram()
+    ```
+
+3.  **Number of Children**
+
+    ```{r}
+    ggplot(insurance, aes (children))+
+      geom_histogram()
+    ```
+
+4.  **Health Insurance Cost (USD)**
+
+    ```{r}
+    ggplot(insurance, aes (charges))+
+      geom_histogram()
+    ```
+
+------------------------------------------------------------------------
+
+For **categorical data**: Bar plots are utilized to visualize the frequency of each category. This provides a clear representation of the prominence of each category within the respective feature.
+
+1.  **gender**
+
+    ```{r}
+    ggplot(insurance, aes (sex))+
+      geom_bar()
+    ```
+
+2.  **smoking status**
+
+    ```{r}
+    ggplot(insurance, aes (smoker))+
+      geom_bar()
+    ```
+
+------------------------------------------------------------------------
+
+## **Perform Linear Regression Model**
+
+### **Univariable analysis**
+
+1.  **age**
+
+    ```{r}
+    SLR_age <- lm(charges ~ age,
+                  data = insurance)
+
+    tab_model(SLR_age)
+    ```
+
+2.  **sex**
+
+    ```{r}
+    SLR_sex <- lm(charges ~ sex,
+                  data = insurance)
+
+    tab_model(SLR_sex)
+    ```
+
+3.  **bmi**
+
+    ```{r}
+    SLR_bmi <- lm(charges ~ bmi,
+                  data = insurance)
+
+    tab_model(SLR_bmi)
+    ```
+
+4.  **number of children**
+
+    ```{r}
+    SLR_children <- lm(charges ~ children,
+                  data = insurance)
+
+    tab_model(SLR_children)
+    ```
+
+5.  **smoking status**
+
+    ```{r}
+    SLR_smoking <- lm(charges ~ smoker,
+                  data = insurance)
+
+    tab_model(SLR_smoking)
+    ```
+
+**Table Summary for Simple Linear Regression**
+
+```{r}
+#create a summary table for each model with confidence intervals
+tbl_age <- tbl_regression(SLR_age, conf.level = 0.95)
+
+tbl_sex <- tbl_regression(SLR_sex, conf.level = 0.95)
+
+tbl_bmi <- tbl_regression(SLR_bmi, conf.level = 0.95)
+
+tbl_children <- tbl_regression(SLR_children, conf.level = 0.95)
+
+tbl_smoking <- tbl_regression(SLR_smoking, conf.level = 0.95)
+
+#Combine all tables into one
+SLR_table <- tbl_stack(
+  list(tbl_age, tbl_sex, tbl_children, tbl_smoking, tbl_bmi)
+) %>%
+  as_gt() %>%
+  gt::tab_header(
+    title = "Simple Linear Regression Model"
+  )
+
+#Print the summary table
+SLR_table
+```
+
+### Multiple Linear Regression without Interaction (Model A)
+
+Model A includes all covariates—age, sex, number of children, BMI, and smoking status—as predictors to examine their association with the outcome variable, health insurance charges. This approach aims to evaluate the contribution of each factor while controlling for the others in explaining variations in insurance costs.
+
+```{r}
+MLR_modelA <- lm(charges ~ age + sex + children + bmi + smoker,
+                 data = insurance)
+
+tab_model(MLR_modelA)
+```
+
+**Table Summary for Model A**
+
+```{r}
+tbl_regression(MLR_modelA) %>%  add_glance_table(include = c(adj.r.squared)) %>% 
+  bold_labels() %>% italicize_levels() %>% add_n() %>% 
+  as_gt() %>%
+  gt::tab_header(title = "Multiple Linear Regression Model A",
+                 subtitle = "Without Interaction")
+```
+
+### Multiple Linear Regression with Interaction (Model B)
+
+Model B is a multiple linear regression (MLR) model that includes an interaction term between age and smoking status. This decision is based on the premise that both variables—age and smoking status—have the potential to modify their combined effect on the outcome variable, health insurance charges
+
+```{r}
+MLR_modelB <- lm(charges ~ age + sex + children + bmi + smoker + age:smoker,
+                 data = insurance)
+
+tab_model(MLR_modelB)
+```
+
+**Table Summary for Model B**
+
+```{r}
+tbl_regression(MLR_modelB) %>%  add_glance_table(include = c(adj.r.squared)) %>% 
+  bold_labels() %>% italicize_levels() %>% add_n() %>% 
+  as_gt() %>%
+  gt::tab_header(title = "Multiple Linear Regression Model B",
+                 subtitle = "With Interaction")
+```
+
+------------------------------------------------------------------------
+
+## **Model Selection**
+
+-   **Compare model fit:**
+
+1.  Adjusted R^2^
+
+    ```{r}
+    summary(MLR_modelA)$adj.r.squared
+    summary(MLR_modelB)$adj.r.squared
+    ```
+
+2.  Akaike Information Criterion (AIC)
+
+    ```{r}
+    AIC(MLR_modelA)
+    AIC(MLR_modelB)
+    ```
+
+-   Perform an Analysis of Variance (ANOVA) to formally test whether adding the interaction term significantly improves the model.
+
+```{r}
+anova(MLR_modelA,MLR_modelB)
+```
+
+Both the adjusted R^2^ and AIC values for the models were comparable, indicating similar overall model performance. For the ANOVA comparison, the p-value of 0.1317 suggests that the interaction term does not significantly improve the model. Consequently, the simpler model (MLR_modelA) was selected for its interpretability and practicality in explaining the relationship between covariates and the outcome.
+
+------------------------------------------------------------------------
+
+## **Model Diagnostic and Assumption Checking**
+
+We took Model A (MLR model without interaction) as our preliminary model
+
+```{r}
+prelim.final.m <- lm (charges ~ age + sex + children + bmi + smoker, 
+                      data = insurance)
+```
+
+**a. Diagnostics plots for residual analysis**
+
+**Plot 1 (Linearity)**
+
+```{r}
+plot(prelim.final.m,which=1)
+```
+
+Comment: random scatter of points, thus linearity assumption is likely meet.
+
+**Plot 2 (normality of residuals)**
+
+```{r}
+plot(prelim.final.m,which=2)
+```
+
+Comment: The Q-Q plot indicates that the majority of the data points closely follow the diagonal line, suggesting that the residuals are approximately normally distributed. However, a small number of observations (specifically observations 243, 578, and 1301) exhibit large residuals, which may suggest potential outliers or influential data points.
+
+**Plot 3 (Homoscedasticity)**
+
+```{r}
+plot(prelim.final.m,which=3)
+```
+
+Comment: residuals appear to be equally spread (random scatter) across all levels of the fitted values. thus homoscedasticity is likely valid.
+
+**Plot 4 (Influential)**
+
+```{r}
+plot(prelim.final.m,which=5)
+```
+
+Comment: Observations 544, 578, and 1301 are identified as potential outliers in the Residual vs Leverage plot. However, these points do not exceed the Cook's distance threshold, indicating that they are not influential cases that would significantly impact the regression model's result.
+
+b\. Plot residuals against numerical independent variables (eg : age, number of children, and BMI) in the model to check for individual linearity.
+
+1.  **residual vs age**
+
+```{r}
+augment(prelim.final.m) %>%
+  ggplot(aes(x = age, y = .resid))+
+  geom_point()+
+  geom_smooth()
+```
+
+2.  **residual vs number of children**
+
+    ```{r}
+    augment(prelim.final.m) %>%
+      ggplot(aes(x = children, y = .resid))+
+      geom_point()+
+      geom_smooth()
+    ```
+
+3.  **residual vs BMI**
+
+    ```{r}
+    augment(prelim.final.m) %>%
+      ggplot(aes(x = bmi, y = .resid))+
+      geom_point()+
+      geom_smooth()
+    ```
+
+Comment: Residuals shows individual linearity against age, children and bmi
+
+------------------------------------------------------------------------
+
+## **Final Model Checking**
+
+### **Fitted values and residuals**
+
+We produce diagnostic values to look for outliers or any influential observations within the model
+
+```{r}
+#extract residual value from model
+res.model <- residuals(prelim.final.m)
+head(res.model)
+
+# Plot histogram of residuals
+hist(res.model, 
+     main = "Histogram of Residuals", 
+     xlab = "Residuals", 
+     col = "lightblue", 
+     border = "black", 
+     breaks = 20, 
+     freq = FALSE)  # Set freq = FALSE to plot density instead of counts
+
+# Add normal distribution curve
+x <- seq(min(res.model), max(res.model), length = 100)  # Generate sequence of x values
+y <- dnorm(x, mean = mean(res.model), sd = sd(res.model))  # Compute normal density
+lines(x, y, col = "red", lwd = 2)  # Add normal distribution line
+
+```
+
+Comment: residual appear normally distributed
+
+-   Generate residual values:
+
+```{r}
+library(DT)
+insurance.pred.res <- augment(prelim.final.m)
+insurance.pred.res %>% datatable()
+```
+
+### **Influential Observations**
+
+Keep standardized residuals between 2 and -2 (values above 2 or lower than −2 considered as influential observations
+
+```{r}
+new_insurance <- 
+  insurance.pred.res %>% 
+  filter(.std.resid < 2 & .std.resid > -2 )
+```
+
+Re-run the model with the non-influential observations, make it as our final model
+
+```{r}
+final_model <- lm(charges ~ age + sex + children + smoker + bmi,
+                  data = new_insurance)
+
+summary(final_model)
+```
+
+### **Model diagnostics and assumption checking for final model**
+
+1.  Diagnostic plots
+
+**Plot 1 (Linearity)**
+
+```{r}
+plot(final_model, which = 1)
+```
+
+**Plot 2 (normality of residuals)**
+
+```{r}
+plot(final_model, which = 2)
+```
+
+**Plot 3 (Homoscedasticity)**
+
+```{r}
+plot(final_model, which = 3)
+```
+
+**Plot 4 (Influential)**
+
+```{r}
+plot(final_model, which = 5)
+```
+
+2.  Plot residuals against numerical independent variables (eg : age, children and BMI) in the model to check for individual linearity.
+    -   Residual vs age
+
+        ```{r}
+        augment(final_model) %>%
+          ggplot(aes(x = age, y = .resid))+
+          geom_point()+
+          geom_smooth()
+        ```
+
+    -   Residual vs children
+
+        ```{r}
+        augment(final_model) %>%
+          ggplot(aes(x = children, y = .resid))+
+          geom_point()+
+          geom_smooth()
+        ```
+
+    -   Residual vs BMI
+
+        ```{r}
+        augment(final_model) %>%
+          ggplot(aes(x = bmi, y = .resid))+
+          geom_point()+
+          geom_smooth()
+        ```
+
+Comment: residual for final model shows individual linearity against age, children and bmi.
+
+3.  Histogram of residual of final model
+
+    ```{r}
+    #extract residual value from model
+    res.final_model <- residuals(final_model)
+    head(res.final_model)
+
+    # Plot histogram of residuals
+    hist(res.final_model, 
+         main = "Histogram of Residuals", 
+         xlab = "Residuals", 
+         col = "lightblue", 
+         border = "black", 
+         breaks = 20, 
+         freq = FALSE)  # Set freq = FALSE to plot density instead of counts
+
+    # Add normal distribution curve
+    x <- seq(min(res.final_model), max(res.final_model), length = 100)  # Generate sequence of x values
+    y <- dnorm(x, mean = mean(res.final_model), sd = sd(res.final_model))  # Compute normal density
+    lines(x, y, col = "red", lwd = 2)  # Add normal distribution line
+    ```
+
+Comment: Residual of final model appear normally distributed
+
+------------------------------------------------------------------------
+
+## **Final table for multiple linear regression**
+
+```{r}
+library(gt)
+library(gtsummary)
+
+# Create regression table with additional metrics and formatting
+tbl_regression(final_model) %>%
+  add_glance_table(include = c("adj.r.squared")) %>%  # Add Adjusted R-squared from glance
+  bold_labels() %>%  # Bold regression labels
+  italicize_levels() %>%  # Italicize factor levels
+  bold_p( # Bold p-values
+  ) %>%
+  as_gt() %>%  # Convert to gt table
+  gt::tab_header(
+    title = "Multiple Linear Regression Model",  # Main title
+    subtitle = "Without Interaction"  # Subtitle
+  )
+
+```
+
+------------------------------------------------------------------------
+
+## **Interpretation**
+
+Model Equation:
+
+```{r}
+library(equatiomatic)
+extract_eq(final_model, use_coefs = TRUE)
+
+```
+
+-   The **Adjusted R² = 0.845**, indicating that approximately **84.5% of the variance in the health insurance charges (outcome variable)** is explained by the included predictors (age, sex, children, smoker, and BMI).
+
+-   Every additional year of age, health insurance charges are expected to increase by USD 255, holding all other variables constant. The narrow confidence interval and highly significant p-value suggest a robust and reliable relationship between age and insurance charges.
+
+-   Each additional child in the household is associated with an increase in health insurance charges of USD 392, holding other factors constant. The confidence interval is moderately narrow, and the relationship is statistically significant.
+
+-   Smoking status, with non-smokers as the reference group, has the largest effect on health insurance charges among all the predictors. This indicates that smokers, on average, incur USD 24,072 more in health insurance charges compared to non-smokers, holding other variables constant. The narrow confidence interval and highly significant p-value highlight the substantial and reliable impact of smoking on charges.
+
+-   Every one-unit increase in BMI, health insurance charges are expected to rise by USD 325, assuming all other factors remain constant. The confidence interval is relatively tight, and the relationship is statistically significant.
+
+-   No significant difference in charges between males and females.
